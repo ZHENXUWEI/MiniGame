@@ -2,6 +2,7 @@ package cn.islys.gms.controller;
 
 import cn.islys.gms.service.MarketService;
 import cn.islys.gms.service.WalletService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -72,10 +73,16 @@ public class MarketController {
     public Map<String, Object> getMarketItems(
             @PathVariable String itemName,
             @RequestParam(required = false) String sortBy,
-            @RequestParam(required = false) String sortOrder) {
+            @RequestParam(required = false) String sortOrder,
+            HttpSession session) {
         Map<String, Object> response = new HashMap<>();
         try {
-            Integer userId = 1; // 默认用户ID
+            Long userId = (Long) session.getAttribute("userId");
+            if (userId == null) {
+                response.put("success", false);
+                response.put("message", "请先登录");
+                return response;
+            }
 
             // 获取市场物品
             List<Map<String, Object>> marketItems = marketService.generateMarketItemsByName(itemName);
@@ -103,10 +110,16 @@ public class MarketController {
      */
     @PostMapping("/purchase")
     @ResponseBody
-    public Map<String, Object> purchaseItem(@RequestBody Map<String, Object> purchaseData) {
+    public Map<String, Object> purchaseItem(@RequestBody Map<String, Object> purchaseData, HttpSession session) {
         Map<String, Object> response = new HashMap<>();
         try {
-            Integer userId = 1; // 默认用户ID
+            Long userId = (Long) session.getAttribute("userId");
+            if (userId == null) {
+                response.put("success", false);
+                response.put("message", "请先登录");
+                return response;
+            }
+
             Long itemId = Long.valueOf(purchaseData.get("itemId").toString());
             Integer currentDurability = purchaseData.get("currentDurability") != null ?
                     Integer.valueOf(purchaseData.get("currentDurability").toString()) : null;
@@ -140,10 +153,16 @@ public class MarketController {
      */
     @GetMapping("/money")
     @ResponseBody
-    public Map<String, Object> getUserMoney() {
+    public Map<String, Object> getUserMoney(HttpSession session) {
         Map<String, Object> response = new HashMap<>();
         try {
-            Integer userId = 1; // 默认用户ID
+            Long userId = (Long) session.getAttribute("userId");
+            if (userId == null) {
+                response.put("success", false);
+                response.put("message", "请先登录");
+                return response;
+            }
+
             Integer money = walletService.getUserWallet(userId).getMoney();
             response.put("success", true);
             response.put("money", money);

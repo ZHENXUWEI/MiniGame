@@ -4,6 +4,7 @@ import cn.islys.gms.entity.Backpack;
 import cn.islys.gms.entity.UserWallet;
 import cn.islys.gms.service.BackpackService;
 import cn.islys.gms.service.WalletService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -37,15 +38,22 @@ public class BackpackController {
     @ResponseBody
     public Map<String, Object> getBackpackInfo(
             @RequestParam(required = false) String type,
-            @RequestParam(required = false) String keyword) {
+            @RequestParam(required = false) String keyword,
+            HttpSession session) {
         Map<String, Object> response = new HashMap<>();
         try {
-            Integer userId = 1; // 默认用户ID
+            // 从session中获取当前登录用户的ID
+            Long userId = (Long) session.getAttribute("userId");
+            if (userId == null) {
+                response.put("success", false);
+                response.put("message", "请先登录");
+                return response;
+            }
 
             // 获取用户金钱
             UserWallet wallet = walletService.getUserWallet(userId);
 
-            // 获取背包物品
+            // 获取背包物品 - 使用当前用户的ID
             List<Backpack> backpackItems;
             if (type != null && !type.isEmpty() && keyword != null && !keyword.isEmpty()) {
                 backpackItems = backpackService.searchBackpackByTypeAndKeyword(userId, type, keyword);
@@ -72,10 +80,16 @@ public class BackpackController {
      */
     @PostMapping("/sell/{backpackId}")
     @ResponseBody
-    public Map<String, Object> sellItem(@PathVariable Long backpackId) {
+    public Map<String, Object> sellItem(@PathVariable Long backpackId, HttpSession session) {
         Map<String, Object> response = new HashMap<>();
         try {
-            Integer userId = 1; // 默认用户ID
+            Long userId = (Long) session.getAttribute("userId");
+            if (userId == null) {
+                response.put("success", false);
+                response.put("message", "请先登录");
+                return response;
+            }
+
             boolean success = backpackService.sellItem(userId, backpackId);
 
             if (success) {
@@ -100,10 +114,17 @@ public class BackpackController {
      */
     @GetMapping("/types")
     @ResponseBody
-    public Map<String, Object> getBackpackItemTypes() {
+    public Map<String, Object> getBackpackItemTypes(HttpSession session) {
         Map<String, Object> response = new HashMap<>();
         try {
-            List<String> types = backpackService.getBackpackItemTypes(1);
+            Long userId = (Long) session.getAttribute("userId");
+            if (userId == null) {
+                response.put("success", false);
+                response.put("message", "请先登录");
+                return response;
+            }
+
+            List<String> types = backpackService.getBackpackItemTypes(userId);
             response.put("success", true);
             response.put("data", types);
         } catch (Exception e) {

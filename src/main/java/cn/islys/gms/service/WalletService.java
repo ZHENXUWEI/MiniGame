@@ -17,7 +17,7 @@ public class WalletService {
     /**
      * 获取用户钱包
      */
-    public UserWallet getUserWallet(Integer userId) {
+    public UserWallet getUserWallet(Long userId) {
         return walletRepository.findByUserId(userId)
                 .orElseGet(() -> {
                     UserWallet newWallet = new UserWallet();
@@ -31,7 +31,7 @@ public class WalletService {
      * 消费金钱
      */
     @Transactional
-    public boolean spendMoney(Integer userId, Integer amount) {
+    public boolean spendMoney(Long userId, Integer amount) {
         UserWallet wallet = getUserWallet(userId);
         if (wallet.getMoney() >= amount) {
             wallet.setMoney(wallet.getMoney() - amount);
@@ -45,7 +45,7 @@ public class WalletService {
      * 添加金钱
      */
     @Transactional
-    public void addMoney(Integer userId, Integer amount) {
+    public void addMoney(Long userId, Integer amount) {
         UserWallet wallet = getUserWallet(userId);
         wallet.setMoney(wallet.getMoney() + amount);
         walletRepository.save(wallet);

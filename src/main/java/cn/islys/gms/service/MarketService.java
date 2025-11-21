@@ -172,14 +172,14 @@ public class MarketService {
      * 购买物品
      */
     @Transactional
-    public boolean purchaseItem(Integer userId, Long itemId, Integer currentDurability,
+    public boolean purchaseItem(Long userId, Long itemId, Integer currentDurability,
                                 Integer maxDurability, Integer purchasePrice, Integer quantity) {
         // 检查金钱是否足够
         if (!walletService.spendMoney(userId, purchasePrice)) {
             return false;
         }
 
-        // 添加物品到背包
+        // 添加物品到背包 - 使用正确的用户ID
         return backpackService.addItemToBackpack(userId, itemId, currentDurability, maxDurability, purchasePrice, quantity);
     }
 

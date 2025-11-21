@@ -17,7 +17,7 @@ public class Backpack {
     private Long id;
 
     @Column(name = "user_id", nullable = false)
-    private Integer userId = 1;
+    private Long userId;
 
     @Column(name = "item_id", nullable = false)
     private Long itemId;

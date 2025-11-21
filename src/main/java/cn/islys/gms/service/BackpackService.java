@@ -27,7 +27,7 @@ public class BackpackService {
     /**
      * 获取用户背包所有物品（包含物品详情）
      */
-    public List<Backpack> getUserBackpack(Integer userId) {
+    public List<Backpack> getUserBackpack(Long userId) {
         List<Backpack> backpackItems = backpackRepository.findByUserIdOrderByPurchaseTimeDesc(userId);
 
         // 为每个背包物品设置物品详情
@@ -42,7 +42,7 @@ public class BackpackService {
     /**
      * 按类型筛选背包物品
      */
-    public List<Backpack> getBackpackByType(Integer userId, String type) {
+    public List<Backpack> getBackpackByType(Long userId, String type) {
         List<Backpack> backpackItems = backpackRepository.findByUserIdAndItemType(userId, type);
 
         for (Backpack backpack : backpackItems) {
@@ -56,7 +56,7 @@ public class BackpackService {
     /**
      * 按关键词搜索背包物品
      */
-    public List<Backpack> searchBackpackByKeyword(Integer userId, String keyword) {
+    public List<Backpack> searchBackpackByKeyword(Long userId, String keyword) {
         List<Backpack> backpackItems = backpackRepository.findByUserIdAndItemNameContaining(userId, keyword);
 
         for (Backpack backpack : backpackItems) {
@@ -70,7 +70,7 @@ public class BackpackService {
     /**
      * 按类型和关键词搜索背包物品
      */
-    public List<Backpack> searchBackpackByTypeAndKeyword(Integer userId, String type, String keyword) {
+    public List<Backpack> searchBackpackByTypeAndKeyword(Long userId, String type, String keyword) {
         List<Backpack> backpackItems = backpackRepository.findByUserIdAndItemTypeAndItemNameContaining(userId, type, keyword);
 
         for (Backpack backpack : backpackItems) {
@@ -85,7 +85,7 @@ public class BackpackService {
      * 出售物品
      */
     @Transactional
-    public boolean sellItem(Integer userId, Long backpackId) {
+    public boolean sellItem(Long userId, Long backpackId) {
         Optional<Backpack> backpackOpt = backpackRepository.findById(backpackId);
 
         if (backpackOpt.isPresent()) {
@@ -93,7 +93,7 @@ public class BackpackService {
 
             // 检查物品是否属于该用户
             if (!backpack.getUserId().equals(userId)) {
-                return false;
+                return false;  // 物品不属于当前用户
             }
 
             // 计算出售价格
@@ -140,7 +140,7 @@ public class BackpackService {
     /**
      * 获取背包中存在的物品类型
      */
-    public List<String> getBackpackItemTypes(Integer userId) {
+    public List<String> getBackpackItemTypes(Long userId) {
         return backpackRepository.findDistinctItemTypesByUserId(userId);
     }
 
@@ -148,7 +148,7 @@ public class BackpackService {
      * 添加物品到背包（购买时调用）
      */
     @Transactional
-    public boolean addItemToBackpack(Integer userId, Long itemId, Integer currentDurability,
+    public boolean addItemToBackpack(Long userId, Long itemId, Integer currentDurability,
                                      Integer maxDurability, Integer purchasePrice, Integer quantity) {
         // 查找物品信息
         Optional<Item> itemOpt = itemRepository.findById(itemId);

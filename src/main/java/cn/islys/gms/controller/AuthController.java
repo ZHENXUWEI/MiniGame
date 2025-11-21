@@ -36,8 +36,8 @@ public class AuthController {
 
             User user = userService.login(username, password);
             if (user != null) {
-                // 登录成功，设置session
-                session.setAttribute("userId", user.getId());
+                // 登录成功，设置session - 确保使用正确的用户ID
+                session.setAttribute("userId", user.getId());  // 使用 user.getId() 而不是固定值
                 session.setAttribute("username", user.getUsername());
                 session.setAttribute("nickname", user.getNickname());
 

@@ -17,7 +17,7 @@ public class UserWallet {
     private Long id;
 
     @Column(name = "user_id", nullable = false, unique = true)
-    private Integer userId = 1;
+    private Long userId;
 
     @Column(name = "money", nullable = false)
     private Integer money = 10000;
