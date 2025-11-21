@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>登录 - 武器交易系统</title>
+    <title>登录 - 迷你游戏</title>
     <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/element-plus"></script>
@@ -133,7 +133,7 @@
 <div id="app" class="login-container">
     <!-- 登录头部 -->
     <div class="login-header">
-        <h1>🔫 武器交易系统</h1>
+        <h1>🔫 迷你游戏</h1>
         <p>请登录您的账户</p>
     </div>
 
@@ -184,23 +184,6 @@
 
         <div class="register-link">
             没有账户？ <a href="javascript:void(0)" @click="showRegister = true">立即注册</a>
-        </div>
-
-        <!-- 演示账户信息 -->
-        <div class="demo-accounts">
-            <h4>演示账户（点击自动填充）：</h4>
-            <div class="demo-account">
-                <span>管理员账户</span>
-                <button class="demo-account-btn" @click="fillDemoAccount('admin')">使用此账户</button>
-            </div>
-            <div class="demo-account">
-                <span>玩家账户</span>
-                <button class="demo-account-btn" @click="fillDemoAccount('player1')">使用此账户</button>
-            </div>
-            <div class="demo-account">
-                <span>测试账户</span>
-                <button class="demo-account-btn" @click="fillDemoAccount('test')">使用此账户</button>
-            </div>
         </div>
     </div>
 
@@ -373,13 +356,6 @@
                 }
             };
 
-            // 自动填充演示账户
-            const fillDemoAccount = (username) => {
-                loginForm.value.username = username;
-                loginForm.value.password = '123456';
-                ElMessage.success(`已填充 ${username} 账户信息`);
-            };
-
             return {
                 loginFormRef,
                 registerFormRef,
@@ -392,7 +368,6 @@
                 registerRules,
                 handleLogin,
                 handleRegister,
-                fillDemoAccount
             };
         }
     })
