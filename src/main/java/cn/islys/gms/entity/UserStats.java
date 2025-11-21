@@ -51,31 +51,32 @@ public class UserStats {
 
     // 获取段位等级
     public String getRankTier() {
-        if (rankPoints >= 10000) return "LEGEND";
-        if (rankPoints >= 8000) return "MYTHIC";
-        if (rankPoints >= 6500) return "MASTER";
-        if (rankPoints >= 5000) return "DIAMOND";
-        if (rankPoints >= 3500) return "PLATINUM";
-        if (rankPoints >= 2000) return "GOLD";
-        if (rankPoints >= 1500) return "SILVER";
-        return "BRONZE";
+        if (rankPoints >= 15000) return "传说";
+        if (rankPoints >= 10000) return "神话";
+        if (rankPoints >= 8000) return "大师";
+        if (rankPoints >= 6500) return "钻石";
+        if (rankPoints >= 5000) return "铂金";
+        if (rankPoints >= 3500) return "黄金";
+        if (rankPoints >= 2000) return "白银";
+        return "青铜";
     }
 
     // 获取小段位
     public Integer getRankSubTier() {
-        if (rankPoints >= 10000) return null; // 传说没有小段位
+        if (rankPoints >= 15000) return null; // 传说没有小段位
+        if (rankPoints >= 10000) return 1;    // 神话只有1段
+        if (rankPoints >= 8000) return 1;     // 大师只有1段
 
         int basePoints;
-        if (rankPoints >= 8000) basePoints = 8000;
-        else if (rankPoints >= 6500) basePoints = 6500;
+        if (rankPoints >= 6500) basePoints = 6500;
         else if (rankPoints >= 5000) basePoints = 5000;
         else if (rankPoints >= 3500) basePoints = 3500;
         else if (rankPoints >= 2000) basePoints = 2000;
-        else if (rankPoints >= 1500) basePoints = 1500;
         else basePoints = 0;
 
         int pointsInTier = rankPoints - basePoints;
-        return (pointsInTier / 500) + 1;
+        int pointsPerSubTier = 500; // 每个小段位500分
+        return Math.min((pointsInTier / pointsPerSubTier) + 1, 3); // 最多3个小段位
     }
 
     // 获取表现等级

@@ -969,6 +969,32 @@
             const purchasing = ref(false);
             const sortBy = ref('durability');
             const sortOrder = ref('desc');
+            const currentPage = ref('market'); // 根据当前页面设置
+            const battleNotification = ref(false);
+            const username = ref('玩家');
+            const userInitial = ref('玩');
+
+            // 获取用户信息
+            const loadUserInfo = async () => {
+                try {
+                    const response = await axios.get('/api/user/info');
+                    if (response.data.success) {
+                        username.value = response.data.user.nickname || response.data.user.username;
+                        userInitial.value = username.value.charAt(0);
+                    }
+                } catch (error) {
+                    console.error('获取用户信息失败:', error);
+                }
+            };
+
+// 设置当前页面
+            const setCurrentPage = () => {
+                const path = window.location.pathname;
+                if (path.includes('backpack')) currentPage.value = 'backpack';
+                else if (path.includes('market')) currentPage.value = 'market';
+                else if (path.includes('battle/ranking')) currentPage.value = 'ranking';
+                else if (path.includes('battle')) currentPage.value = 'battle';
+            };
 
             // 方法
             const loadTypes = async () => {
@@ -1190,6 +1216,8 @@
             onMounted(() => {
                 loadTypes();
                 loadMoney();
+                setCurrentPage();
+                loadUserInfo();
             });
 
             return {

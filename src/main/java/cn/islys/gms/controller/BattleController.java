@@ -385,14 +385,29 @@ public class BattleController {
     public Map<String, Object> refreshRankingBots() {
         Map<String, Object> response = new HashMap<>();
         try {
-            rankingService.refreshRankingBots();
+            rankingService.autoRefreshRankingBots();
             response.put("success", true);
             response.put("message", "排行榜机器人数据已刷新");
-
         } catch (Exception e) {
             response.put("success", false);
-            response.put("message", "刷新排行榜机器人失败: " + e.getMessage());
+            response.put("message", "刷新失败: " + e.getMessage());
         }
         return response;
     }
+
+    @GetMapping("/ranking/statistics")
+    @ResponseBody
+    public Map<String, Object> getRankingStatistics() {
+        Map<String, Object> response = new HashMap<>();
+        try {
+            Map<String, Object> statistics = rankingService.getRankTierStatistics();
+            response.put("success", true);
+            response.put("data", statistics);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", "获取统计信息失败: " + e.getMessage());
+        }
+        return response;
+    }
+
 }
