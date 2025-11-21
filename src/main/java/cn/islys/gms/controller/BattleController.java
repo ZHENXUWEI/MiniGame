@@ -1,13 +1,16 @@
 package cn.islys.gms.controller;
 
+import cn.islys.gms.entity.Backpack;
 import cn.islys.gms.entity.UserStats;
 import cn.islys.gms.service.BattleService;
 import cn.islys.gms.service.RankingService;
+import cn.islys.gms.service.BackpackService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +24,9 @@ public class BattleController {
 
     @Autowired
     private RankingService rankingService;
+
+    @Autowired
+    private BackpackService backpackService;
 
     /**
      * 战斗页面
@@ -53,12 +59,34 @@ public class BattleController {
                 return response;
             }
 
-            Map<String, Object> equipment = battleService.getBattleEquipment(userId);
-            response.putAll(equipment);
+            // 直接调用背包服务获取装备
+            List<Backpack> backpackItems = backpackService.getUserBackpack(userId);
+
+            List<Backpack> rangedWeapons = new ArrayList<>();
+            List<Backpack> meleeWeapons = new ArrayList<>();
+            List<Backpack> armors = new ArrayList<>();
+
+            for (Backpack item : backpackItems) {
+                String type = item.getItem().getType();
+                if ("远程武器".equals(type) || "手枪".equals(type) || "步枪".equals(type) ||
+                        "冲锋枪".equals(type) || "狙击枪".equals(type)) {
+                    rangedWeapons.add(item);
+                } else if ("近战武器".equals(type)) {
+                    meleeWeapons.add(item);
+                } else if ("护甲".equals(type)) {
+                    armors.add(item);
+                }
+            }
+
+            response.put("success", true);
+            response.put("rangedWeapons", rangedWeapons);
+            response.put("meleeWeapons", meleeWeapons);
+            response.put("armors", armors);
 
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "获取战斗装备失败: " + e.getMessage());
+            e.printStackTrace();
         }
         return response;
     }
