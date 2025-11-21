@@ -597,25 +597,31 @@
                 selling.value = true;
                 try {
                     await ElMessageBox.confirm(
-                        `确定要出售 ${item.item.name} 吗？\n出售价格: ¥${item.sellPrice}`,
+                        `确定要出售 <strong>${item.item.name}</strong> 吗？<br>出售价格: <span style="color: #27ae60; font-weight: bold;">¥${item.sellPrice}</span>`,
                         '确认出售',
                         {
                             confirmButtonText: '确定出售',
                             cancelButtonText: '取消',
-                            type: 'warning'
+                            type: 'warning',
+                            dangerouslyUseHTMLString: true
                         }
                     );
 
+                    console.log('开始出售物品:', item.id, '价格:', item.sellPrice);
+
                     const response = await axios.post(`/backpack/sell/${item.id}`);
+                    console.log('出售响应:', response.data);
+
                     if (response.data.success) {
                         ElMessage.success(`成功出售 ${item.item.name}，获得 ¥${item.sellPrice}`);
-                        money.value = response.data.money;
+                        money.value = response.data.money; // 更新前端显示的金钱
                         await loadBackpack(); // 重新加载背包
                     } else {
                         ElMessage.error(response.data.message);
                     }
                 } catch (error) {
                     if (error !== 'cancel') {
+                        console.error('出售错误:', error);
                         ElMessage.error('出售失败: ' + error.message);
                     }
                 } finally {

@@ -18,13 +18,20 @@ public class WalletService {
      * 获取用户钱包
      */
     public UserWallet getUserWallet(Long userId) {
-        return walletRepository.findByUserId(userId)
-                .orElseGet(() -> {
-                    UserWallet newWallet = new UserWallet();
-                    newWallet.setUserId(userId);
-                    newWallet.setMoney(10000);
-                    return walletRepository.save(newWallet);
-                });
+        Optional<UserWallet> walletOpt = walletRepository.findByUserId(userId);
+        if (walletOpt.isPresent()) {
+            UserWallet wallet = walletOpt.get();
+            System.out.println("获取用户 " + userId + " 钱包，当前金额: " + wallet.getMoney());
+            return wallet;
+        } else {
+            // 创建新钱包
+            UserWallet newWallet = new UserWallet();
+            newWallet.setUserId(userId);
+            newWallet.setMoney(10000);
+            UserWallet savedWallet = walletRepository.save(newWallet);
+            System.out.println("创建用户 " + userId + " 新钱包，初始金额: 10000");
+            return savedWallet;
+        }
     }
 
     /**
@@ -33,11 +40,15 @@ public class WalletService {
     @Transactional
     public boolean spendMoney(Long userId, Integer amount) {
         UserWallet wallet = getUserWallet(userId);
+        System.out.println("用户 " + userId + " 尝试消费 " + amount + "，当前金额: " + wallet.getMoney());
+
         if (wallet.getMoney() >= amount) {
             wallet.setMoney(wallet.getMoney() - amount);
-            walletRepository.save(wallet);
+            UserWallet savedWallet = walletRepository.save(wallet);
+            System.out.println("消费成功，剩余金额: " + savedWallet.getMoney());
             return true;
         }
+        System.out.println("消费失败，金额不足");
         return false;
     }
 
@@ -47,7 +58,10 @@ public class WalletService {
     @Transactional
     public void addMoney(Long userId, Integer amount) {
         UserWallet wallet = getUserWallet(userId);
+        System.out.println("用户 " + userId + " 添加金钱 " + amount + "，添加前金额: " + wallet.getMoney());
+
         wallet.setMoney(wallet.getMoney() + amount);
-        walletRepository.save(wallet);
+        UserWallet savedWallet = walletRepository.save(wallet);
+        System.out.println("添加金钱成功，当前金额: " + savedWallet.getMoney());
     }
 }

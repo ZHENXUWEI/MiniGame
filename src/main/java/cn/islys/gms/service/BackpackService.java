@@ -93,11 +93,20 @@ public class BackpackService {
 
             // 检查物品是否属于该用户
             if (!backpack.getUserId().equals(userId)) {
-                return false;  // 物品不属于当前用户
+                return false;
             }
+
+            // 获取物品信息来计算出售价格
+            Optional<Item> itemOpt = itemRepository.findById(backpack.getItemId());
+            if (itemOpt.isEmpty()) {
+                return false;
+            }
+
+            backpack.setItem(itemOpt.get()); // 设置物品信息
 
             // 计算出售价格
             Integer sellPrice = calculateSellPrice(backpack);
+            System.out.println("出售物品: " + backpack.getItem().getName() + ", 价格: " + sellPrice);
 
             // 如果是子弹且数量大于1，减少数量
             if (backpack.getQuantity() > 1) {
@@ -109,6 +118,7 @@ public class BackpackService {
 
             // 添加金钱到用户钱包
             walletService.addMoney(userId, sellPrice);
+            System.out.println("用户 " + userId + " 获得金钱: " + sellPrice);
 
             return true;
         }
@@ -120,20 +130,26 @@ public class BackpackService {
      */
     private Integer calculateSellPrice(Backpack backpack) {
         if (backpack.getItem() == null) {
+            System.out.println("物品信息为空");
             return 0;
         }
 
         // 子弹类物品按原价出售
         if ("子弹".equals(backpack.getItem().getType())) {
-            return backpack.getItem().getValue() * backpack.getQuantity();
+            int price = backpack.getItem().getValue() * backpack.getQuantity();
+            System.out.println("子弹类物品，价格: " + price);
+            return price;
         }
 
         // 武器类物品按耐久比例计算价格
         if (backpack.getCurrentDurability() != null && backpack.getMaxDurability() != null) {
             double durabilityRatio = (double) backpack.getCurrentDurability() / backpack.getMaxDurability();
-            return (int) (backpack.getItem().getValue() * durabilityRatio);
+            int price = (int) (backpack.getItem().getValue() * durabilityRatio);
+            System.out.println("武器类物品，耐久比例: " + durabilityRatio + ", 价格: " + price);
+            return price;
         }
 
+        System.out.println("默认价格: " + backpack.getItem().getValue());
         return backpack.getItem().getValue();
     }
 

@@ -90,6 +90,8 @@ public class BackpackController {
                 return response;
             }
 
+            System.out.println("用户 " + userId + " 尝试出售物品 " + backpackId);
+
             boolean success = backpackService.sellItem(userId, backpackId);
 
             if (success) {
@@ -98,13 +100,17 @@ public class BackpackController {
                 response.put("success", true);
                 response.put("money", wallet.getMoney());
                 response.put("message", "物品出售成功");
+                System.out.println("出售成功，用户当前金钱: " + wallet.getMoney());
             } else {
                 response.put("success", false);
-                response.put("message", "出售失败");
+                response.put("message", "出售失败，物品不存在或不属于当前用户");
+                System.out.println("出售失败");
             }
         } catch (Exception e) {
             response.put("success", false);
             response.put("message", "出售失败: " + e.getMessage());
+            System.out.println("出售异常: " + e.getMessage());
+            e.printStackTrace();
         }
         return response;
     }
