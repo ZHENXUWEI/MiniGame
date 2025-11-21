@@ -1,0 +1,1221 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>战斗系统 - 迷你游戏</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .battle-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            min-height: 100vh;
+        }
+
+        /* 头部样式 */
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .header-title {
+            font-size: 2.2em;
+            font-weight: 300;
+            background: linear-gradient(45deg, #3498db, #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-stats {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            min-width: 120px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .level-value {
+            color: #3498db;
+        }
+
+        .rank-value {
+            color: #f39c12;
+        }
+
+        .performance-value {
+            color: #2ecc71;
+        }
+
+        .record-value {
+            color: #e74c3c;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            min-height: 800px;
+        }
+
+        /* 侧边栏 */
+        .sidebar {
+            background: #f8f9fa;
+            border-right: 1px solid #e9ecef;
+            padding: 20px;
+        }
+
+        .mode-selection {
+            margin-bottom: 30px;
+        }
+
+        .mode-title {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .mode-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .mode-card:hover {
+            border-color: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.2);
+        }
+
+        .mode-card.active {
+            border-color: #3498db;
+            background: #e8f4fd;
+        }
+
+        .mode-name {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #2c3e50;
+        }
+
+        .mode-desc {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            line-height: 1.4;
+        }
+
+        .mode-rewards {
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #27ae60;
+        }
+
+        /* 装备选择区 */
+        .equipment-selection {
+            margin-top: 30px;
+        }
+
+        .equipment-title {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .equipment-section {
+            margin-bottom: 20px;
+        }
+
+        .section-title {
+            font-size: 1em;
+            margin-bottom: 10px;
+            color: #34495e;
+            font-weight: 500;
+        }
+
+        .equipment-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .equipment-item {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .equipment-item:hover {
+            border-color: #3498db;
+        }
+
+        .equipment-item.selected {
+            border-color: #3498db;
+            background: #e8f4fd;
+        }
+
+        .equipment-name {
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+
+        .equipment-stats {
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }
+
+        .required {
+            color: #e74c3c;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* 战斗区域 */
+        .battle-area {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .battle-start-section {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .battle-start-title {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        .battle-start-desc {
+            font-size: 1.1em;
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            line-height: 1.6;
+        }
+
+        .start-battle-btn {
+            padding: 15px 40px;
+            font-size: 1.2em;
+        }
+
+        /* 战斗进行中 */
+        .battle-in-progress {
+            display: none;
+        }
+
+        .battle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .battle-info {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .turn-indicator {
+            padding: 8px 16px;
+            background: #3498db;
+            color: white;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .battle-field {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .team-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .team-title {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .team-ally .team-title {
+            color: #27ae60;
+        }
+
+        .team-enemy .team-title {
+            color: #e74c3c;
+        }
+
+        .character-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .character-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .character-card.active {
+            border-color: #3498db;
+            background: #e8f4fd;
+        }
+
+        .character-card.dead {
+            opacity: 0.6;
+            background: #ecf0f1;
+        }
+
+        .character-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .character-name {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .character-health {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+
+        .health-bar {
+            flex: 1;
+            height: 8px;
+            background: #bdc3c7;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .health-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .health-high {
+            background: #2ecc71;
+        }
+
+        .health-medium {
+            background: #f39c12;
+        }
+
+        .health-low {
+            background: #e74c3c;
+        }
+
+        .health-text {
+            font-size: 0.9em;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: right;
+        }
+
+        .character-equipment {
+            font-size: 0.8em;
+            color: #7f8c8d;
+        }
+
+        /* 行动面板 */
+        .action-panel {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .action-title {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .weapon-selection {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .weapon-btn {
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .target-selection {
+            margin-bottom: 20px;
+        }
+
+        .target-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .target-btn {
+            padding: 12px;
+            text-align: center;
+        }
+
+        .target-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        /* 战斗记录 */
+        .battle-log {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .log-title {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .log-entry {
+            padding: 8px 0;
+            border-bottom: 1px solid #f8f9fa;
+            font-size: 0.9em;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-damage {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .log-heal {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        .log-info {
+            color: #3498db;
+        }
+
+        /* 战斗结果 */
+        .battle-result {
+            display: none;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .result-title {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .result-victory {
+            color: #27ae60;
+        }
+
+        .result-defeat {
+            color: #e74c3c;
+        }
+
+        .result-rewards {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            margin: 0 auto 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .reward-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .reward-item:last-child {
+            border-bottom: none;
+        }
+
+        .reward-label {
+            color: #7f8c8d;
+        }
+
+        .reward-value {
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
+        .reward-exp {
+            color: #3498db;
+        }
+
+        .reward-money {
+            color: #f39c12;
+        }
+
+        .reward-performance {
+            color: #2ecc71;
+        }
+
+        .reward-rank {
+            color: #9b59b6;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                border-right: none;
+                border-bottom: 1px solid #e9ecef;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .user-stats {
+                justify-content: center;
+            }
+
+            .battle-field {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-buttons {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="battle-container">
+    <!-- 头部 -->
+    <div class="header">
+        <h1 class="header-title">⚔️ 战斗系统</h1>
+
+        <div class="user-stats">
+            <div class="stat-item">
+                <div class="stat-label">等级</div>
+                <div class="stat-value level-value">Lv.{{ userStats.level }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">经验</div>
+                <div class="stat-value">{{ userStats.experience }}/{{ userStats.level * 1000 }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">段位</div>
+                <div class="stat-value rank-value">{{ rankTier }} {{ rankSubTier || '' }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">状态表现</div>
+                <div class="stat-value performance-value">{{ performanceGrade }}</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-label">胜负记录</div>
+                <div class="stat-value record-value">{{ winLossRecord }}</div>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <el-button type="primary" @click="goToBackpack">我的背包</el-button>
+            <el-button type="success" @click="goToMarket">武器市场</el-button>
+            <el-button type="warning" @click="goToRanking">排行榜</el-button>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <!-- 模式选择 -->
+            <div class="mode-selection">
+                <div class="mode-title">选择战斗模式</div>
+
+                <div class="mode-card"
+                     :class="{ active: selectedMode === 'QUICK' }"
+                     @click="selectMode('QUICK')">
+                    <div class="mode-name">⚡ 快速匹配</div>
+                    <div class="mode-desc">3v3快速战斗，获得经验和金币奖励</div>
+                    <div class="mode-rewards">奖励: 经验 + 金币 + 状态表现</div>
+                </div>
+
+                <div class="mode-card"
+                     :class="{ active: selectedMode === 'RANKED' }"
+                     @click="selectMode('RANKED')">
+                    <div class="mode-name">🏆 排位赛</div>
+                    <div class="mode-desc">竞争性比赛，影响段位分和排名</div>
+                    <div class="mode-rewards">奖励: 1.5倍经验金币 + 段位分</div>
+                </div>
+
+                <div class="mode-card"
+                     :class="{ active: selectedMode === 'TOURNAMENT' }"
+                     @click="selectMode('TOURNAMENT')">
+                    <div class="mode-name">🎯 赛事模式</div>
+                    <div class="mode-desc">特殊赛事活动，丰厚奖励</div>
+                    <div class="mode-rewards">奖励: 根据赛事规则</div>
+                </div>
+            </div>
+
+            <!-- 装备选择 -->
+            <div class="equipment-selection">
+                <div class="equipment-title">选择战斗装备</div>
+
+                <!-- 远程武器 -->
+                <div class="equipment-section">
+                    <div class="section-title">远程武器 (最多选择2把)</div>
+                    <div class="equipment-list">
+                        <div v-for="weapon in rangedWeapons"
+                             :key="weapon.id"
+                             class="equipment-item"
+                             :class="{ selected: selectedRangedWeapons.includes(weapon.id) }"
+                             @click="toggleRangedWeapon(weapon.id)">
+                            <div class="equipment-name">{{ weapon.item.name }}</div>
+                            <div class="equipment-stats">
+                                伤害: {{ weapon.item.damage }} |
+                                耐久: {{ weapon.currentDurability }}/{{ weapon.maxDurability }}
+                            </div>
+                        </div>
+                        <div v-if="rangedWeapons.length === 0" class="equipment-item" style="color: #7f8c8d;">
+                            暂无远程武器
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 近战武器 -->
+                <div class="equipment-section">
+                    <div class="section-title">近战武器 <span class="required">(必选)</span></div>
+                    <div class="equipment-list">
+                        <div v-for="weapon in meleeWeapons"
+                             :key="weapon.id"
+                             class="equipment-item"
+                             :class="{ selected: selectedMeleeWeapon === weapon.id }"
+                             @click="selectMeleeWeapon(weapon.id)">
+                            <div class="equipment-name">{{ weapon.item.name }}</div>
+                            <div class="equipment-stats">
+                                伤害: {{ weapon.item.damage }} |
+                                耐久: {{ weapon.currentDurability }}/{{ weapon.maxDurability }}
+                            </div>
+                        </div>
+                        <div v-if="meleeWeapons.length === 0" class="equipment-item" style="color: #e74c3c;">
+                            必须至少拥有一把近战武器
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 护甲 -->
+                <div class="equipment-section">
+                    <div class="section-title">护甲 (可选)</div>
+                    <div class="equipment-list">
+                        <div v-for="armor in armors"
+                             :key="armor.id"
+                             class="equipment-item"
+                             :class="{ selected: selectedArmor === armor.id }"
+                             @click="selectArmor(armor.id)">
+                            <div class="equipment-name">{{ armor.item.name }}</div>
+                            <div class="equipment-stats">
+                                防御: {{ armor.item.getArmorDefense() }} |
+                                耐久: {{ armor.currentDurability }}/{{ armor.maxDurability }}
+                            </div>
+                        </div>
+                        <div v-if="armors.length === 0" class="equipment-item" style="color: #7f8c8d;">
+                            暂无护甲
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 战斗区域 -->
+        <div class="battle-area">
+            <!-- 战斗开始前 -->
+            <div v-if="!battleInProgress && !battleResult" class="battle-start-section">
+                <h2 class="battle-start-title">准备战斗</h2>
+                <p class="battle-start-desc">
+                    选择战斗模式和装备，组建你的战斗小队。<br>
+                    每场战斗为3v3回合制，合理搭配武器和护甲是获胜的关键。
+                </p>
+
+                <el-button
+                        type="primary"
+                        class="start-battle-btn"
+                        :disabled="!canStartBattle"
+                        @click="startBattle"
+                        :loading="startingBattle">
+                    {{ startingBattle ? '准备战斗中...' : '开始战斗' }}
+                </el-button>
+
+                <div v-if="!canStartBattle" style="margin-top: 20px; color: #e74c3c;">
+                    {{ getStartBattleError() }}
+                </div>
+            </div>
+
+            <!-- 战斗进行中 -->
+            <div v-if="battleInProgress" class="battle-in-progress">
+                <div class="battle-header">
+                    <div class="battle-info">
+                        <div class="turn-indicator">
+                            {{ battleContext.playerTurn ? '你的回合' : '敌方回合' }}
+                        </div>
+                        <div>回合: {{ battleContext.currentTurn }}</div>
+                        <div>模式: {{ battleContext.mode }}</div>
+                    </div>
+                    <el-button type="danger" @click="surrenderBattle">投降</el-button>
+                </div>
+
+                <!-- 战斗场地 -->
+                <div class="battle-field">
+                    <!-- 己方队伍 -->
+                    <div class="team-section team-ally">
+                        <div class="team-title">我方队伍</div>
+                        <div class="character-list">
+                            <!-- 玩家 -->
+                            <div class="character-card" :class="{ active: battleContext.playerTurn }">
+                                <div class="character-header">
+                                    <div class="character-name">👤 {{ battleContext.player.name }}</div>
+                                    <div class="health-text">{{ battleContext.player.health }}/{{ battleContext.player.maxHealth }}</div>
+                                </div>
+                                <div class="character-health">
+                                    <div class="health-bar">
+                                        <div class="health-fill"
+                                             :class="getHealthClass(battleContext.player)"
+                                             :style="{ width: getHealthPercentage(battleContext.player) + '%' }">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 队友 -->
+                            <div v-for="(teammate, index) in battleContext.teammates"
+                                 :key="index"
+                                 class="character-card"
+                                 :class="{ dead: !teammate.alive }">
+                                <div class="character-header">
+                                    <div class="character-name">🤖 {{ teammate.name }}</div>
+                                    <div class="health-text">{{ teammate.health }}/{{ teammate.maxHealth }}</div>
+                                </div>
+                                <div class="character-health">
+                                    <div class="health-bar">
+                                        <div class="health-fill"
+                                             :class="getHealthClass(teammate)"
+                                             :style="{ width: getHealthPercentage(teammate) + '%' }">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 敌方队伍 -->
+                    <div class="team-section team-enemy">
+                        <div class="team-title">敌方队伍</div>
+                        <div class="character-list">
+                            <div v-for="(enemy, index) in battleContext.enemies"
+                                 :key="index"
+                                 class="character-card"
+                                 :class="{ dead: !enemy.alive }">
+                                <div class="character-header">
+                                    <div class="character-name">👹 {{ enemy.name }}</div>
+                                    <div class="health-text">{{ enemy.health }}/{{ enemy.maxHealth }}</div>
+                                </div>
+                                <div class="character-health">
+                                    <div class="health-bar">
+                                        <div class="health-fill"
+                                             :class="getHealthClass(enemy)"
+                                             :style="{ width: getHealthPercentage(enemy) + '%' }">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 行动面板 -->
+                <div v-if="battleContext.playerTurn" class="action-panel">
+                    <div class="action-title">选择行动</div>
+
+                    <div class="weapon-selection">
+                        <el-button
+                                v-for="weapon in availableWeapons"
+                                :key="weapon.type"
+                                class="weapon-btn"
+                                @click="selectWeapon(weapon.type)">
+                            {{ weapon.name }}
+                        </el-button>
+                    </div>
+
+                    <div class="target-selection" v-if="selectedWeapon">
+                        <div class="action-title">选择目标</div>
+                        <div class="target-list">
+                            <el-button
+                                    v-for="(enemy, index) in aliveEnemies"
+                                    :key="index"
+                                    class="target-btn"
+                                    @click="executeTurn(index)"
+                                    :disabled="executingTurn">
+                                {{ enemy.name }} ({{ enemy.health }} HP)
+                            </el-button>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <el-button @click="cancelAction">取消</el-button>
+                    </div>
+                </div>
+
+                <!-- 战斗记录 -->
+                <div class="battle-log">
+                    <div class="log-title">战斗记录</div>
+                    <div v-for="(log, index) in battleLogs" :key="index" class="log-entry">
+                        <span v-html="log"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 战斗结果 -->
+            <div v-if="battleResult" class="battle-result">
+                <div class="result-title" :class="battleResult.result === 'WIN' ? 'result-victory' : 'result-defeat'">
+                    {{ battleResult.result === 'WIN' ? '🎉 胜利!' : '💀 失败' }}
+                </div>
+
+                <div class="result-rewards">
+                    <div class="reward-item">
+                        <span class="reward-label">击杀数</span>
+                        <span class="reward-value">{{ battleResult.playerKills }}</span>
+                    </div>
+                    <div class="reward-item">
+                        <span class="reward-label">获得经验</span>
+                        <span class="reward-value reward-exp">+{{ battleResult.rewards.experience }}</span>
+                    </div>
+                    <div class="reward-item">
+                        <span class="reward-label">获得金币</span>
+                        <span class="reward-value reward-money">+{{ battleResult.rewards.money }}</span>
+                    </div>
+                    <div class="reward-item">
+                        <span class="reward-label">状态表现</span>
+                        <span class="reward-value reward-performance">
+                                {{ battleResult.rewards.performance > 0 ? '+' : '' }}{{ battleResult.rewards.performance }}
+                            </span>
+                    </div>
+                    <div v-if="battleResult.rewards.rankPoints" class="reward-item">
+                        <span class="reward-label">段位分</span>
+                        <span class="reward-value reward-rank">
+                                {{ battleResult.rewards.rankPoints > 0 ? '+' : '' }}{{ battleResult.rewards.rankPoints }}
+                            </span>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <el-button type="primary" @click="continueAfterBattle">继续</el-button>
+                    <el-button @click="goToRanking">查看排行榜</el-button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, onMounted, computed, watch } = Vue;
+    const { ElMessage, ElMessageBox } = ElementPlus;
+
+    createApp({
+        setup() {
+            // 用户数据
+            const userStats = ref({
+                level: 1,
+                experience: 0,
+                rankPoints: 0,
+                performance: 50,
+                wins: 0,
+                losses: 0
+            });
+            const rankTier = ref('BRONZE');
+            const rankSubTier = ref(1);
+            const performanceGrade = ref('D');
+            const winLossRecord = ref('W0/L0');
+
+            // 装备数据
+            const rangedWeapons = ref([]);
+            const meleeWeapons = ref([]);
+            const armors = ref([]);
+
+            // 战斗状态
+            const selectedMode = ref('QUICK');
+            const selectedRangedWeapons = ref([]);
+            const selectedMeleeWeapon = ref(null);
+            const selectedArmor = ref(null);
+
+            // 战斗进行中
+            const battleInProgress = ref(false);
+            const startingBattle = ref(false);
+            const battleContext = ref(null);
+            const selectedWeapon = ref(null);
+            const executingTurn = ref(false);
+            const battleLogs = ref([]);
+
+            // 战斗结果
+            const battleResult = ref(null);
+
+            // 计算属性
+            const canStartBattle = computed(() => {
+                return selectedRangedWeapons.value.length > 0 &&
+                    selectedMeleeWeapon.value !== null;
+            });
+
+            const aliveEnemies = computed(() => {
+                if (!battleContext.value) return [];
+                return battleContext.value.enemies.filter(enemy => enemy.alive);
+            });
+
+            const availableWeapons = computed(() => {
+                const weapons = [];
+                if (selectedRangedWeapons.value.length > 0) {
+                    weapons.push({ type: 'RANGED', name: '远程武器' });
+                }
+                if (selectedMeleeWeapon.value) {
+                    weapons.push({ type: 'MELEE', name: '近战武器' });
+                }
+                return weapons;
+            });
+
+            // 方法
+            const loadUserStats = async () => {
+                try {
+                    const response = await axios.get('/battle/user/stats');
+                    if (response.data.success) {
+                        userStats.value = response.data.stats;
+                        rankTier.value = response.data.rankTier;
+                        rankSubTier.value = response.data.rankSubTier;
+                        performanceGrade.value = response.data.performanceGrade;
+                        winLossRecord.value = response.data.winLossRecord;
+                    }
+                } catch (error) {
+                    ElMessage.error('加载用户数据失败: ' + error.message);
+                }
+            };
+
+            const loadEquipment = async () => {
+                try {
+                    const response = await axios.get('/battle/equipment');
+                    if (response.data.success) {
+                        rangedWeapons.value = response.data.rangedWeapons || [];
+                        meleeWeapons.value = response.data.meleeWeapons || [];
+                        armors.value = response.data.armors || [];
+                    }
+                } catch (error) {
+                    ElMessage.error('加载装备失败: ' + error.message);
+                }
+            };
+
+            const selectMode = (mode) => {
+                selectedMode.value = mode;
+            };
+
+            const toggleRangedWeapon = (weaponId) => {
+                const index = selectedRangedWeapons.value.indexOf(weaponId);
+                if (index > -1) {
+                    selectedRangedWeapons.value.splice(index, 1);
+                } else if (selectedRangedWeapons.value.length < 2) {
+                    selectedRangedWeapons.value.push(weaponId);
+                } else {
+                    ElMessage.warning('最多只能选择2把远程武器');
+                }
+            };
+
+            const selectMeleeWeapon = (weaponId) => {
+                selectedMeleeWeapon.value = weaponId;
+            };
+
+            const selectArmor = (armorId) => {
+                selectedArmor.value = selectedArmor.value === armorId ? null : armorId;
+            };
+
+            const getStartBattleError = () => {
+                if (selectedRangedWeapons.value.length === 0) {
+                    return '请至少选择一把远程武器';
+                }
+                if (selectedMeleeWeapon.value === null) {
+                    return '请选择一把近战武器';
+                }
+                return '';
+            };
+
+            const startBattle = async () => {
+                startingBattle.value = true;
+                try {
+                    const battleData = {
+                        mode: selectedMode.value,
+                        rangedWeaponIds: selectedRangedWeapons.value,
+                        meleeWeaponId: selectedMeleeWeapon.value,
+                        armorId: selectedArmor.value
+                    };
+
+                    const response = await axios.post('/battle/start', battleData);
+                    if (response.data.success) {
+                        battleContext.value = response.data.context;
+                        battleInProgress.value = true;
+                        battleLogs.value = ['战斗开始！'];
+                        ElMessage.success('战斗开始！');
+                    } else {
+                        ElMessage.error(response.data.message);
+                    }
+                } catch (error) {
+                    ElMessage.error('开始战斗失败: ' + error.message);
+                } finally {
+                    startingBattle.value = false;
+                }
+            };
+
+            const selectWeapon = (weaponType) => {
+                selectedWeapon.value = weaponType;
+            };
+
+            const executeTurn = async (targetIndex) => {
+                executingTurn.value = true;
+                try {
+                    const turnData = {
+                        targetIndex: targetIndex,
+                        weaponType: selectedWeapon.value
+                    };
+
+                    const response = await axios.post('/battle/turn', turnData);
+                    if (response.data.success) {
+                        battleContext.value = response.data.context;
+                        selectedWeapon.value = null;
+
+                        // 添加战斗日志
+                        if (response.data.battleLog) {
+                            battleLogs.value.unshift(response.data.battleLog);
+                        }
+
+                        // 检查战斗是否结束
+                        if (response.data.battleEnded) {
+                            battleInProgress.value = false;
+                            battleResult.value = response.data.battleResult;
+                        }
+                    } else {
+                        ElMessage.error(response.data.message);
+                    }
+                } catch (error) {
+                    ElMessage.error('执行行动失败: ' + error.message);
+                } finally {
+                    executingTurn.value = false;
+                }
+            };
+
+            const cancelAction = () => {
+                selectedWeapon.value = null;
+            };
+
+            const surrenderBattle = async () => {
+                try {
+                    await ElMessageBox.confirm(
+                        '确定要投降吗？这将判定为战斗失败。',
+                        '确认投降',
+                        { type: 'warning' }
+                    );
+
+                    const response = await axios.post('/battle/surrender');
+                    if (response.data.success) {
+                        battleInProgress.value = false;
+                        battleResult.value = response.data.battleResult;
+                        ElMessage.info('已投降');
+                    }
+                } catch (error) {
+                    if (error !== 'cancel') {
+                        ElMessage.error('投降失败: ' + error.message);
+                    }
+                }
+            };
+
+            const continueAfterBattle = () => {
+                battleResult.value = null;
+                // 重新加载用户数据
+                loadUserStats();
+                loadEquipment();
+            };
+
+            const getHealthPercentage = (character) => {
+                return (character.health / character.maxHealth) * 100;
+            };
+
+            const getHealthClass = (character) => {
+                const percentage = getHealthPercentage(character);
+                if (percentage > 60) return 'health-high';
+                if (percentage > 30) return 'health-medium';
+                return 'health-low';
+            };
+
+            const goToBackpack = () => {
+                window.location.href = '/backpack';
+            };
+
+            const goToMarket = () => {
+                window.location.href = '/market';
+            };
+
+            const goToRanking = () => {
+                window.location.href = '/battle/ranking';
+            };
+
+            // 生命周期
+            onMounted(() => {
+                loadUserStats();
+                loadEquipment();
+            });
+
+            return {
+                // 数据
+                userStats,
+                rankTier,
+                rankSubTier,
+                performanceGrade,
+                winLossRecord,
+                rangedWeapons,
+                meleeWeapons,
+                armors,
+                selectedMode,
+                selectedRangedWeapons,
+                selectedMeleeWeapon,
+                selectedArmor,
+                battleInProgress,
+                startingBattle,
+                battleContext,
+                selectedWeapon,
+                executingTurn,
+                battleLogs,
+                battleResult,
+                // 计算属性
+                canStartBattle,
+                aliveEnemies,
+                availableWeapons,
+                // 方法
+                loadUserStats,
+                loadEquipment,
+                selectMode,
+                toggleRangedWeapon,
+                selectMeleeWeapon,
+                selectArmor,
+                getStartBattleError,
+                startBattle,
+                selectWeapon,
+                executeTurn,
+                cancelAction,
+                surrenderBattle,
+                continueAfterBattle,
+                getHealthPercentage,
+                getHealthClass,
+                goToBackpack,
+                goToMarket,
+                goToRanking
+            };
+        }
+    })
+        .use(ElementPlus)
+        .mount('#app');
+</script>
+</body>
+</html>
