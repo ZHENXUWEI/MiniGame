@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的背包</title>
+    <!-- Element Plus CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Element Plus -->
+    <script src="https://unpkg.com/element-plus"></script>
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .backpack-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        /* 头部样式 */
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            font-weight: 300;
+            background: linear-gradient(45deg, #3498db, #2ecc71);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .money-display {
+            font-size: 1.8em;
+            color: #f39c12;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            color: #bdc3c7;
+        }
+
+        /* 控制面板 */
+        .controls-panel {
+            background: #ecf0f1;
+            padding: 25px;
+            border-bottom: 1px solid #bdc3c7;
+        }
+
+        .search-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 15px;
+            align-items: end;
+        }
+
+        @media (max-width: 768px) {
+            .search-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 物品网格 */
+        .items-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        /* 物品卡片 */
+        .item-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+            height: fit-content;
+        }
+
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .item-header {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 20px;
+            position: relative;
+        }
+
+        .item-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .item-type {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .quantity-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 15px;
+            padding: 4px 10px;
+            font-size: 0.9em;
+            font-weight: bold;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .item-content {
+            padding: 20px;
+        }
+
+        .item-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .damage-value {
+            color: #e74c3c;
+        }
+
+        .price-value {
+            color: #27ae60;
+        }
+
+        /* 耐久度显示 */
+        .durability-info {
+            background: #ecf0f1;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .durability-text {
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .durability-bar {
+            height: 8px;
+            background: #bdc3c7;
+            border-radius: 4px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+
+        .durability-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .durability-new {
+            background: #2ecc71;
+        }
+
+        .durability-worn {
+            background: #f39c12;
+        }
+
+        .durability-broken {
+            background: #e74c3c;
+        }
+
+        .durability-status {
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-new {
+            color: #27ae60;
+        }
+
+        .status-worn {
+            color: #f39c12;
+        }
+
+        .status-broken {
+            color: #e74c3c;
+        }
+
+        .item-bullet {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.9em;
+            color: #856404;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+        }
+
+        .empty-state i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            color: #bdc3c7;
+            display: block;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+            grid-column: 1 / -1;
+        }
+
+        .loading i {
+            font-size: 2em;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        /* 统计信息 */
+        .stats-panel {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .stats-title {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #3498db;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-weapon {
+            color: #3498db;
+        }
+
+        .stat-bullet {
+            color: #f39c12;
+        }
+
+        .stat-value {
+            color: #2ecc71;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="backpack-container">
+    <!-- 头部 -->
+    <div class="header">
+        <h1>🎒我的背包</h1>
+        <div class="money-display">💰 当前金钱: ¥{{ money.toLocaleString() }}</div>
+        <p>管理您的物品和装备，合理分配资源</p>
+    </div>
+
+    <!-- 控制面板 -->
+    <div class="controls-panel">
+        <div class="search-controls">
+            <el-form-item label="类型筛选">
+                <el-select v-model="searchType" placeholder="选择物品类型" clearable @change="loadBackpack">
+                    <el-option label="所有类型" value=""></el-option>
+                    <el-option
+                            v-for="type in types"
+                            :key="type"
+                            :label="type"
+                            :value="type">
+                    </el-option>
+                </el-select>
+            </el-form-item>
+
+            <el-form-item label="搜索物品">
+                <el-input
+                        v-model="searchKeyword"
+                        placeholder="输入物品名称搜索..."
+                        clearable
+                        @input="onSearchInput"
+                        @clear="loadBackpack">
+                    <template #prefix>
+                        <el-icon><Search /></el-icon>
+                    </template>
+                </el-input>
+            </el-form-item>
+
+            <div style="display: flex; gap: 10px;">
+                <el-button
+                        type="primary"
+                        @click="loadBackpack"
+                        :loading="loading">刷新
+                </el-button>
+                <el-button
+                        type="success"
+                        @click="goToMarket">前往市场
+                </el-button>
+            </div>
+        </div>
+
+        <!-- 统计信息 -->
+        <div class="stats-panel">
+            <div class="stats-title">背包统计</div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">{{ totalItems }}</div>
+                    <div class="stat-label">总物品数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number stat-weapon">{{ weaponCount }}</div>
+                    <div class="stat-label">武器数量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number stat-bullet">{{ bulletCount }}</div>
+                    <div class="stat-label">子弹数量</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number stat-value">¥{{ totalValue.toLocaleString() }}</div>
+                    <div class="stat-label">物品总价值</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载状态 -->
+    <div v-if="loading" class="loading">
+        <el-icon class="is-loading" style="font-size: 2em;">
+            <Loading />
+        </el-icon>
+        <p>加载背包物品中...</p>
+    </div>
+
+    <!-- 物品网格 -->
+    <div v-else class="items-grid">
+        <div
+                v-for="item in backpack"
+                :key="item.id"
+                class="item-card">
+            <div class="item-header">
+                <div class="item-name">{{ item.item.name }}</div>
+                <div class="item-type">{{ item.item.type }}</div>
+                <div v-if="item.quantity > 1" class="quantity-badge">
+                    x{{ item.quantity }}
+                </div>
+            </div>
+
+            <div class="item-content">
+                <div class="item-stats">
+                    <div class="stat-item">
+                        <div class="stat-label">伤害</div>
+                        <div class="stat-value damage-value">
+                            {{ item.item.damage }}
+                            <span v-if="item.item.type === '子弹'">倍</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">购买价格</div>
+                        <div class="stat-value price-value">¥{{ item.purchasePrice }}</div>
+                    </div>
+                </div>
+
+                <!-- 耐久度信息 -->
+                <div v-if="item.currentDurability !== null" class="durability-info">
+                    <div class="durability-text">
+                        {{ item.currentDurability }}/{{ item.maxDurability }}
+                        <span class="durability-status" :class="getDurabilityStatusClass(item)">
+                                {{ getDurabilityStatus(item) }}
+                            </span>
+                    </div>
+                    <div class="durability-bar">
+                        <div class="durability-fill"
+                             :class="getDurabilityBarClass(item)"
+                             :style="{ width: getDurabilityPercentage(item) + '%' }">
+                        </div>
+                    </div>
+                </div>
+
+                <div v-else-if="item.item.type === '子弹'" class="durability-info">
+                    <div class="durability-text">
+                        <span style="color: #f39c12;">💥 消耗品</span>
+                    </div>
+                    <div style="font-size: 0.9em; color: #7f8c8d; margin-top: 5px;">
+                        可堆叠物品
+                    </div>
+                </div>
+
+                <div v-if="item.item.usedBullet" class="item-bullet">
+                    <strong>使用子弹:</strong> {{ item.item.usedBullet }}
+                </div>
+
+                <div class="action-buttons">
+                    <el-button
+                            type="danger"
+                            size="small"
+                            @click="sellItem(item)"
+                            :disabled="selling">
+                        {{ selling ? '出售中...' : `出售 (¥${item.sellPrice})` }}
+                    </el-button>
+                    <el-tag v-if="item.quantity > 1" type="info" size="small">
+                        {{ item.quantity }} 个
+                    </el-tag>
+                </div>
+
+                <div style="margin-top: 10px; font-size: 0.8em; color: #7f8c8d;">
+                    购买时间: {{ formatTime(item.purchaseTime) }}
+                </div>
+            </div>
+        </div>
+
+        <!-- 空状态 -->
+        <div v-if="backpack.length === 0 && !loading" class="empty-state">
+            <el-icon style="font-size: 4em;">
+                <Box />
+            </el-icon>
+            <h3>背包空空如也</h3>
+            <p v-if="searchType || searchKeyword">没有找到匹配的物品，尝试调整搜索条件</p>
+            <p v-else>去市场购买一些物品来充实您的背包吧！</p>
+            <el-button
+                    type="primary"
+                    style="margin-top: 20px;"
+                    @click="goToMarket">
+                🏪 前往市场
+            </el-button>
+        </div>
+    </div>
+    <div class="user-info">
+        <span class="user-dropdown">
+            <User />
+            {{ nickname }}
+            <ArrowDown />
+        </span>
+            <template #dropdown>
+                    <el-dropdown-item @click="showUserInfo">个人信息</el-dropdown-item>
+                    <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
+            </template>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, onMounted, computed, watch } = Vue;
+    const { ElMessage, ElMessageBox } = ElementPlus;
+
+    createApp({
+        setup() {
+            // 响应式数据
+            const money = ref(0);
+            const backpack = ref([]);
+            const types = ref([]);
+            const searchType = ref('');
+            const searchKeyword = ref('');
+            const loading = ref(false);
+            const selling = ref(false);
+
+            // 计算属性
+            const totalItems = computed(() => {
+                return backpack.value.reduce((total, item) => total + item.quantity, 0);
+            });
+
+            const weaponCount = computed(() => {
+                return backpack.value
+                    .filter(item => item.item.type !== '子弹')
+                    .reduce((total, item) => total + item.quantity, 0);
+            });
+
+            const bulletCount = computed(() => {
+                return backpack.value
+                    .filter(item => item.item.type === '子弹')
+                    .reduce((total, item) => total + item.quantity, 0);
+            });
+
+            const totalValue = computed(() => {
+                return backpack.value.reduce((total, item) => {
+                    return total + (item.purchasePrice * item.quantity);
+                }, 0);
+            });
+
+            // 方法
+            const loadBackpack = async () => {
+                loading.value = true;
+                try {
+                    const params = new URLSearchParams();
+                    if (searchType.value) params.append('type', searchType.value);
+                    if (searchKeyword.value) params.append('keyword', searchKeyword.value);
+
+                    const response = await axios.get(`/backpack/info?${params}`);
+                    if (response.data.success) {
+                        money.value = response.data.money;
+                        backpack.value = response.data.data.map(item => {
+                            // 计算出售价格
+                            if (item.item.type === '子弹') {
+                                item.sellPrice = item.item.value; // 子弹按原价出售
+                            } else if (item.currentDurability !== null && item.maxDurability !== null) {
+                                const ratio = item.currentDurability / item.maxDurability;
+                                item.sellPrice = Math.round(item.item.value * ratio);
+                            } else {
+                                item.sellPrice = item.item.value;
+                            }
+                            return item;
+                        });
+                    } else {
+                        ElMessage.error(response.data.message);
+                    }
+                } catch (error) {
+                    ElMessage.error('加载背包失败: ' + error.message);
+                } finally {
+                    loading.value = false;
+                }
+            };
+
+            const loadTypes = async () => {
+                try {
+                    const response = await axios.get('/backpack/types');
+                    if (response.data.success) {
+                        types.value = response.data.data;
+                    } else {
+                        ElMessage.error(response.data.message);
+                    }
+                } catch (error) {
+                    ElMessage.error('加载类型失败: ' + error.message);
+                }
+            };
+
+            const onSearchInput = () => {
+                // 防抖搜索
+                clearTimeout(window.searchTimeout);
+                window.searchTimeout = setTimeout(() => {
+                    loadBackpack();
+                }, 500);
+            };
+
+            const sellItem = async (item) => {
+                selling.value = true;
+                try {
+                    await ElMessageBox.confirm(
+                        `确定要出售 <strong>${item.item.name}</strong> 吗？<br>出售价格: <span style="color: #27ae60; font-weight: bold;">¥${item.sellPrice}</span>`,
+                        '确认出售',
+                        {
+                            confirmButtonText: '确定出售',
+                            cancelButtonText: '取消',
+                            type: 'warning',
+                            dangerouslyUseHTMLString: true
+                        }
+                    );
+
+                    const response = await axios.post(`/backpack/sell/${item.id}`);
+                    if (response.data.success) {
+                        ElMessage.success(`成功出售 ${item.item.name}，获得 ¥${item.sellPrice}`);
+                        money.value = response.data.money;
+                        await loadBackpack(); // 重新加载背包
+                    } else {
+                        ElMessage.error(response.data.message);
+                    }
+                } catch (error) {
+                    if (error !== 'cancel') {
+                        ElMessage.error('出售失败: ' + error.message);
+                    }
+                } finally {
+                    selling.value = false;
+                }
+            };
+
+            const goToMarket = () => {
+                window.location.href = '/market';
+            };
+
+            // 耐久度相关方法
+            const getDurabilityPercentage = (item) => {
+                if (item.currentDurability === null || item.maxDurability === null) return 0;
+                return (item.currentDurability / item.maxDurability) * 100;
+            };
+
+            const getDurabilityStatus = (item) => {
+                if (item.currentDurability === null || item.maxDurability === null) return '未知';
+
+                const ratio = item.currentDurability / item.maxDurability;
+                if (ratio >= 0.85) return '崭新出产';
+                if (ratio >= 0.60) return '略有磨损';
+                if (ratio >= 0.15) return '破损不堪';
+                return '无法使用';
+            };
+
+            const getDurabilityStatusClass = (item) => {
+                if (item.currentDurability === null || item.maxDurability === null) return '';
+
+                const ratio = item.currentDurability / item.maxDurability;
+                if (ratio >= 0.85) return 'status-new';
+                if (ratio >= 0.60) return 'status-worn';
+                if (ratio >= 0.15) return 'status-broken';
+                return 'status-broken';
+            };
+
+            const getDurabilityBarClass = (item) => {
+                if (item.currentDurability === null || item.maxDurability === null) return '';
+
+                const ratio = item.currentDurability / item.maxDurability;
+                if (ratio >= 0.85) return 'durability-new';
+                if (ratio >= 0.60) return 'durability-worn';
+                if (ratio >= 0.15) return 'durability-broken';
+                return 'durability-broken';
+            };
+
+            const formatTime = (timeString) => {
+                if (!timeString) return '未知';
+                const date = new Date(timeString);
+                return date.toLocaleString('zh-CN');
+            };
+
+            // 生命周期
+            onMounted(() => {
+                loadBackpack();
+                loadTypes();
+            });
+
+            return {
+                money,
+                backpack,
+                types,
+                searchType,
+                searchKeyword,
+                loading,
+                selling,
+                totalItems,
+                weaponCount,
+                bulletCount,
+                totalValue,
+                loadBackpack,
+                loadTypes,
+                onSearchInput,
+                sellItem,
+                goToMarket,
+                getDurabilityPercentage,
+                getDurabilityStatus,
+                getDurabilityStatusClass,
+                getDurabilityBarClass,
+                formatTime
+            };
+        }
+    })
+        .use(ElementPlus)
+        .mount('#app');
+</script>
+</body>
+</html>

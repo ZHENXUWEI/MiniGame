@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>武器交易市场</title>
+    <!-- Element Plus CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Element Plus -->
+    <script src="https://unpkg.com/element-plus"></script>
+    <!-- Axios -->
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .market-container {
+            display: flex;
+            min-height: 100vh;
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        /* 侧边栏样式 */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            max-height: 100vh;
+        }
+
+        .sidebar-header {
+            padding: 0 20px 20px;
+            border-bottom: 1px solid #4a6572;
+            margin-bottom: 20px;
+        }
+
+        .sidebar-title {
+            font-size: 1.6em;
+            font-weight: 300;
+            margin-bottom: 10px;
+            color: #3498db;
+        }
+
+        .menu-section {
+            margin-bottom: 5px;
+        }
+
+        .menu-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+        }
+
+        .menu-item:hover {
+            background: rgba(52, 152, 219, 0.1);
+            border-left-color: #3498db;
+        }
+
+        .menu-item.active {
+            background: rgba(52, 152, 219, 0.2);
+            border-left-color: #3498db;
+            color: #3498db;
+        }
+
+        .menu-arrow {
+            transition: transform 0.3s;
+        }
+
+        .menu-item.active .menu-arrow {
+            transform: rotate(180deg);
+        }
+
+        .submenu {
+            background: rgba(0, 0, 0, 0.2);
+            margin-left: 0;
+            border-radius: 0;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .submenu-item {
+            padding: 10px 20px 10px 40px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+            border-left: 3px solid transparent;
+        }
+
+        .submenu-item:hover {
+            background: rgba(52, 152, 219, 0.15);
+            border-left-color: #3498db;
+            color: #3498db;
+        }
+
+        .submenu-item.active {
+            background: rgba(52, 152, 219, 0.25);
+            border-left-color: #3498db;
+            color: #3498db;
+            font-weight: 500;
+        }
+
+        /* 主内容区样式 */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        .money-display {
+            font-size: 1.4em;
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        .current-selection {
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+
+        .current-selection strong {
+            color: #3498db;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        /* 控制面板 */
+        .controls-panel {
+            background: white;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .sort-controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .sort-info {
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        /* 市场网格 */
+        .market-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            padding: 30px;
+            flex: 1;
+        }
+
+        /* 物品卡片 */
+        .item-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid #e9ecef;
+        }
+
+        .item-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .item-header {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 20px;
+            position: relative;
+        }
+
+        .item-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .item-type {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .price-tag {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: #e74c3c;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .item-content {
+            padding: 20px;
+        }
+
+        .item-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .damage-value {
+            color: #e74c3c;
+        }
+
+        /* 伤害信息样式 */
+        .damage-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* 子弹数量信息 */
+        .quantity-info {
+            margin: 10px 0;
+        }
+
+        .quantity-info .stat-item {
+            background: #fff3cd;
+            border-left-color: #f39c12;
+        }
+
+        /* 价格信息 */
+        .price-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: #7f8c8d;
+            font-size: 0.9em;
+        }
+
+        .current-price {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #e74c3c;
+            margin: 5px 0;
+        }
+
+        .price-multiplier {
+            font-size: 0.9em;
+            color: #27ae60;
+            font-weight: 500;
+        }
+
+        .price-multiplier.increase {
+            color: #e74c3c;
+        }
+
+        .price-multiplier.decrease {
+            color: #27ae60;
+        }
+
+        /* 耐久度信息 */
+        .durability-info {
+            background: #ecf0f1;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        .durability-text {
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .durability-bar {
+            height: 8px;
+            background: #bdc3c7;
+            border-radius: 4px;
+            margin: 8px 0;
+            overflow: hidden;
+        }
+
+        .durability-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .durability-new {
+            background: #2ecc71;
+        }
+
+        .durability-worn {
+            background: #f39c12;
+        }
+
+        .durability-broken {
+            background: #e74c3c;
+        }
+
+        .durability-status {
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status-new {
+            color: #27ae60;
+        }
+
+        .status-worn {
+            color: #f39c12;
+        }
+
+        .status-broken {
+            color: #e74c3c;
+        }
+
+        .item-bullet {
+            background: #e8f4fd;
+            border: 1px solid #bee5eb;
+            border-radius: 6px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 0.9em;
+            color: #0c5460;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 80px 20px;
+            color: #7f8c8d;
+        }
+
+        .empty-state i {
+            font-size: 5em;
+            margin-bottom: 20px;
+            color: #bdc3c7;
+            display: block;
+        }
+
+        .empty-state h3 {
+            font-size: 1.8em;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+
+        .empty-state p {
+            font-size: 1.1em;
+            line-height: 1.6;
+            max-width: 500px;
+            margin: 0 auto 20px;
+        }
+
+        /* 加载状态 */
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #7f8c8d;
+            grid-column: 1 / -1;
+        }
+
+        .loading i {
+            font-size: 3em;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .market-container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-height: 300px;
+            }
+
+            .market-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .header-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .controls-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .sort-controls {
+                justify-content: center;
+            }
+
+            .market-grid {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="app" class="market-container">
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2 class="sidebar-title">🔫 武器市场</h2>
+            <p style="font-size: 0.9em; opacity: 0.8;">选择武器类型和具体物品</p>
+        </div>
+
+        <div class="menu">
+            <div
+                    v-for="type in types"
+                    :key="type"
+                    class="menu-section">
+                <div
+                        class="menu-item"
+                        :class="{ active: selectedType === type }"
+                        @click="toggleType(type)">
+                    <span>{{ type }}</span>
+                    <el-icon class="menu-arrow">
+                        <ArrowDown v-if="selectedType === type" />
+                        <ArrowRight v-else />
+                    </el-icon>
+                </div>
+
+                <!-- 子菜单显示在父菜单下面 -->
+                <div v-if="selectedType === type" class="submenu">
+                    <div
+                            v-for="itemName in itemNames"
+                            :key="itemName"
+                            class="submenu-item"
+                            :class="{ active: selectedItemName === itemName }"
+                            @click="selectItem(itemName)">
+                        {{ itemName }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="header-info">
+                <div class="money-display">💰 当前金钱: ¥{{ money.toLocaleString() }}</div>
+                <div class="current-selection" v-if="selectedItemName">
+                    正在浏览: <strong>{{ selectedItemName }}</strong>
+                </div>
+                <div class="current-selection" v-else>
+                    请从左侧选择物品
+                </div>
+            </div>
+
+            <div class="nav-buttons">
+                <el-button
+                        type="primary"
+                        @click="refreshMarket"
+                        :loading="loading">
+                    刷新
+                </el-button>
+                <el-button
+                        type="success"
+                        @click="goToBackpack">
+                    我的背包
+                </el-button>
+            </div>
+        </div>
+
+        <!-- 控制面板 -->
+        <div class="controls-panel" v-if="selectedItemName">
+            <div class="sort-info">
+                共 {{ marketItems.length }} 件物品
+            </div>
+
+            <div class="sort-controls">
+                <el-select v-model="sortBy" placeholder="排序方式" @change="sortItems" style="width: 150px;">
+                    <el-option label="耐久度高到低" value="durability"></el-option>
+                    <el-option label="耐久度低到高" value="durabilityAsc"></el-option>
+                    <el-option label="价格高到低" value="price"></el-option>
+                    <el-option label="价格低到高" value="priceAsc"></el-option>
+                </el-select>
+
+                <el-select v-model="sortOrder" placeholder="排序顺序" @change="sortItems" style="width: 120px;">
+                    <el-option label="降序" value="desc"></el-option>
+                    <el-option label="升序" value="asc"></el-option>
+                </el-select>
+            </div>
+        </div>
+
+        <!-- 加载状态 -->
+        <div v-if="loading" class="loading">
+            <el-icon class="is-loading" style="font-size: 3em;">
+                <Loading />
+            </el-icon>
+            <p>正在加载市场物品...</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">每次刷新都会加载物品</p>
+        </div>
+
+        <!-- 市场网格 -->
+        <div v-else-if="selectedItemName" class="market-grid">
+            <div
+                    v-for="(marketItem, index) in marketItems"
+                    :key="index"
+                    class="item-card">
+                <div class="item-header">
+                    <div class="item-name">{{ marketItem.item.name }}</div>
+                    <div class="item-type">{{ marketItem.item.type }}</div>
+                    <div class="price-tag">#{{ index + 1 }}</div>
+                </div>
+
+                <div class="item-content">
+                    <!-- 伤害信息 -->
+                    <div class="damage-info" v-if="marketItem.adjustedDamage !== undefined">
+                        <div class="stat-item">
+                            <div class="stat-label">基础伤害</div>
+                            <div class="stat-value">
+                                {{ marketItem.item.damage }}
+                                <span v-if="marketItem.item.type === '子弹'">倍</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">实际伤害</div>
+                            <div class="stat-value damage-value">
+                                {{ marketItem.adjustedDamage.toFixed(1) }}
+                                <span v-if="marketItem.item.type === '子弹'">倍</span>
+                                <el-tag v-if="marketItem.adjustedDamage < marketItem.item.damage"
+                                        type="warning" size="small" style="margin-left: 5px;">
+                                    -{{ ((1 - marketItem.adjustedDamage / marketItem.item.damage) * 100).toFixed(0) }}%
+                                </el-tag>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 子弹数量信息 -->
+                    <div v-if="marketItem.quantity" class="quantity-info">
+                        <div class="stat-item">
+                            <div class="stat-label">弹药数量</div>
+                            <div class="stat-value" style="color: #f39c12;">
+                                {{ marketItem.quantity }} 发
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="item-stats" v-if="!marketItem.adjustedDamage">
+                        <div class="stat-item">
+                            <div class="stat-label">伤害</div>
+                            <div class="stat-value damage-value">
+                                {{ marketItem.item.damage }}
+                                <span v-if="marketItem.item.type === '子弹'">倍</span>
+                            </div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">基础价值</div>
+                            <div class="stat-value">¥{{ marketItem.item.value }}</div>
+                        </div>
+                    </div>
+
+                    <!-- 价格信息 -->
+                    <div class="price-info">
+                        <div class="original-price">
+                            单价: ¥{{ marketItem.basePrice }}
+                            <span v-if="marketItem.quantity"> × {{ marketItem.quantity }} 发</span>
+                        </div>
+                        <div class="current-price">
+                            ¥{{ marketItem.purchasePrice }}
+                        </div>
+                        <div v-if="marketItem.priceMultiplier"
+                             class="price-multiplier"
+                             :class="marketItem.priceMultiplier >= 1 ? 'increase' : 'decrease'">
+                            {{ marketItem.priceMultiplier >= 1 ? '+' : '' }}{{ ((marketItem.priceMultiplier - 1) * 100).toFixed(1) }}%
+                        </div>
+                    </div>
+
+                    <!-- 耐久度信息 -->
+                    <div v-if="marketItem.currentDurability !== undefined" class="durability-info">
+                        <div class="durability-text">
+                            {{ marketItem.currentDurability }}/{{ marketItem.maxDurability }}
+                            <span class="durability-status" :class="getDurabilityStatusClass(marketItem)">
+                                    {{ marketItem.durabilityStatus }}
+                                </span>
+                        </div>
+                        <div class="durability-bar">
+                            <div class="durability-fill"
+                                 :class="getDurabilityBarClass(marketItem)"
+                                 :style="{ width: getDurabilityPercentage(marketItem) + '%' }">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else-if="marketItem.item.type === '子弹'" class="durability-info">
+                        <div class="durability-text">
+                            <span style="color: #f39c12;">💥 消耗品</span>
+                        </div>
+                    </div>
+
+                    <div v-if="marketItem.item.usedBullet" class="item-bullet">
+                        <strong>使用子弹:</strong> {{ marketItem.item.usedBullet }}
+                    </div>
+
+                    <div class="action-buttons">
+                        <el-button
+                                type="success"
+                                size="small"
+                                @click="purchaseItem(marketItem)"
+                                :disabled="purchasing || marketItem.purchasePrice > money">
+                            {{ purchasing ? '购买中...' : getPurchaseButtonText(marketItem) }}
+                        </el-button>
+                        <el-tag v-if="marketItem.purchasePrice > money" type="danger" size="small">
+                            金钱不足
+                        </el-tag>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 空状态 -->
+        <div v-else class="empty-state">
+                <ShoppingCart />
+            <h3>欢迎来到武器交易市场</h3>
+            <p>
+                在这里您可以购买各种武器和弹药。<br>
+                武器耐久度会影响实际伤害值。<br>
+            </p>
+            <div style="margin-top: 30px;">
+                <el-button type="primary" size="large" @click="loadTypes">
+                    加载物品类型
+                </el-button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const { createApp, ref, onMounted, computed, watch } = Vue;
+    const { ElMessage, ElMessageBox } = ElementPlus;
+
+    createApp({
+        setup() {
+            // 响应式数据
+            const money = ref(0);
+            const types = ref([]);
+            const itemNames = ref([]);
+            const marketItems = ref([]);
+            const selectedType = ref('');
+            const selectedItemName = ref('');
+            const loading = ref(false);
+            const purchasing = ref(false);
+            const sortBy = ref('durability');
+            const sortOrder = ref('desc');
+
+            // 方法
+            const loadTypes = async () => {
+                try {
+                    const response = await axios.get('/market/types');
+                    if (response.data.success) {
+                        types.value = response.data.data;
+                        ElMessage.success(`已加载 ${types.value.length} 种物品类型`);
+                    } else {
+                        ElMessage.error(response.data.message);
+                    }
+                } catch (error) {
+                    ElMessage.error('加载类型失败: ' + error.message);
+                }
+            };
+
+            const loadItemNames = async (type) => {
+                if (!type) {
+                    itemNames.value = [];
+                    return;
+                }
+                try {
+                    const response = await axios.get(`/market/items/names/${encodeURIComponent(type)}`);
+                    if (response.data.success) {
+                        itemNames.value = response.data.data;
+                    } else {
+                        ElMessage.error(response.data.message);
+                    }
+                } catch (error) {
+                    ElMessage.error('加载物品名称失败: ' + error.message);
+                }
+            };
+
+            const loadMarketItems = async (itemName) => {
+                if (!itemName) {
+                    marketItems.value = [];
+                    return;
+                }
+
+                loading.value = true;
+                try {
+                    const params = new URLSearchParams();
+                    if (sortBy.value) params.append('sortBy', sortBy.value);
+                    if (sortOrder.value) params.append('sortOrder', sortOrder.value);
+
+                    const response = await axios.get(`/market/items/${encodeURIComponent(itemName)}?${params}`);
+                    if (response.data.success) {
+                        money.value = response.data.money;
+                        marketItems.value = response.data.data;
+                        ElMessage.success(`已加载 ${marketItems.value.length} 件 ${itemName}`);
+                    } else {
+                        ElMessage.error(response.data.message);
+                    }
+                } catch (error) {
+                    ElMessage.error('加载市场物品失败: ' + error.message);
+                } finally {
+                    loading.value = false;
+                }
+            };
+
+            const loadMoney = async () => {
+                try {
+                    const response = await axios.get('/market/money');
+                    if (response.data.success) {
+                        money.value = response.data.money;
+                    }
+                } catch (error) {
+                    console.error('获取金钱失败:', error);
+                }
+            };
+
+            const toggleType = async (type) => {
+                if (selectedType.value === type) {
+                    selectedType.value = '';
+                    selectedItemName.value = '';
+                    marketItems.value = [];
+                } else {
+                    selectedType.value = type;
+                    selectedItemName.value = '';
+                    marketItems.value = [];
+                    await loadItemNames(type);
+                }
+            };
+
+            const selectItem = (itemName) => {
+                selectedItemName.value = itemName;
+                loadMarketItems(itemName);
+            };
+
+            const refreshMarket = () => {
+                if (selectedItemName.value) {
+                    loadMarketItems(selectedItemName.value);
+                }
+            };
+
+            const sortItems = () => {
+                if (selectedItemName.value) {
+                    loadMarketItems(selectedItemName.value);
+                }
+            };
+
+            const getPurchaseButtonText = (marketItem) => {
+                let text = `购买 (¥${marketItem.purchasePrice})`;
+                if (marketItem.quantity) {
+                    text = `购买 ${marketItem.quantity}发 (¥${marketItem.purchasePrice})`;
+                }
+                return text;
+            };
+
+            const purchaseItem = async (marketItem) => {
+                purchasing.value = true;
+                try {
+                    let message = `确定要购买 <strong>${marketItem.item.name}</strong> 吗？<br>
+                        <div style="text-align: left; margin: 10px 0;">
+                            <div>价格: <span style="color: #e74c3c; font-weight: bold;">¥${marketItem.purchasePrice}</span></div>`;
+
+                    // 添加伤害信息
+                    if (marketItem.adjustedDamage !== undefined && marketItem.adjustedDamage < marketItem.item.damage) {
+                        const damageReduction = ((1 - marketItem.adjustedDamage / marketItem.item.damage) * 100).toFixed(0);
+                        message += `<div>实际伤害: ${marketItem.adjustedDamage.toFixed(1)} (减少${damageReduction}%)</div>`;
+                    }
+
+                    // 添加耐久信息
+                    if (marketItem.currentDurability !== undefined) {
+                        message += `<div>耐久: ${marketItem.currentDurability}/${marketItem.maxDurability} (${marketItem.durabilityStatus})</div>`;
+                    }
+
+                    // 添加子弹数量信息
+                    if (marketItem.quantity) {
+                        message += `<div>弹药数量: ${marketItem.quantity} 发</div>`;
+                    }
+
+                    // 添加价格浮动信息
+                    if (marketItem.priceMultiplier) {
+                        const percentage = ((marketItem.priceMultiplier - 1) * 100).toFixed(1);
+                        message += `<div>价格浮动: ${marketItem.priceMultiplier >= 1 ? '+' : ''}${percentage}%</div>`;
+                    }
+
+                    message += `</div>`;
+
+                    await ElMessageBox.confirm(
+                        message,
+                        '确认购买',
+                        {
+                            confirmButtonText: '确定购买',
+                            cancelButtonText: '取消',
+                            type: 'info',
+                            dangerouslyUseHTMLString: true
+                        }
+                    );
+
+                    const purchaseData = {
+                        itemId: marketItem.item.id,
+                        purchasePrice: marketItem.purchasePrice
+                    };
+
+                    if (marketItem.currentDurability !== undefined) {
+                        purchaseData.currentDurability = marketItem.currentDurability;
+                        purchaseData.maxDurability = marketItem.maxDurability;
+                    }
+
+                    if (marketItem.quantity) {
+                        purchaseData.quantity = marketItem.quantity;
+                    }
+
+                    const response = await axios.post('/market/purchase', purchaseData);
+                    if (response.data.success) {
+                        let successMessage = `成功购买 ${marketItem.item.name}`;
+                        if (marketItem.quantity) {
+                            successMessage += ` ${marketItem.quantity}发`;
+                        }
+                        successMessage += `！`;
+                        ElMessage.success(successMessage);
+                        money.value = response.data.money;
+                        await loadMarketItems(selectedItemName.value); // 刷新市场
+                    } else {
+                        ElMessage.error(response.data.message);
+                    }
+                } catch (error) {
+                    if (error !== 'cancel') {
+                        ElMessage.error('购买失败: ' + error.message);
+                    }
+                } finally {
+                    purchasing.value = false;
+                }
+            };
+
+            const goToBackpack = () => {
+                window.location.href = '/backpack';
+            };
+
+            // 耐久度相关方法
+            const getDurabilityPercentage = (marketItem) => {
+                if (marketItem.currentDurability === undefined) return 0;
+                return (marketItem.currentDurability / marketItem.maxDurability) * 100;
+            };
+
+            const getDurabilityStatusClass = (marketItem) => {
+                if (marketItem.currentDurability === undefined) return '';
+
+                const ratio = marketItem.currentDurability / marketItem.maxDurability;
+                if (ratio >= 0.85) return 'status-new';
+                if (ratio >= 0.60) return 'status-worn';
+                if (ratio >= 0.15) return 'status-broken';
+                return 'status-broken';
+            };
+
+            const getDurabilityBarClass = (marketItem) => {
+                if (marketItem.currentDurability === undefined) return '';
+
+                const ratio = marketItem.currentDurability / marketItem.maxDurability;
+                if (ratio >= 0.85) return 'durability-new';
+                if (ratio >= 0.60) return 'durability-worn';
+                if (ratio >= 0.15) return 'durability-broken';
+                return 'durability-broken';
+            };
+
+            // 生命周期
+            onMounted(() => {
+                loadTypes();
+                loadMoney();
+            });
+
+            return {
+                money,
+                types,
+                itemNames,
+                marketItems,
+                selectedType,
+                selectedItemName,
+                loading,
+                purchasing,
+                sortBy,
+                sortOrder,
+                loadTypes,
+                loadItemNames,
+                loadMarketItems,
+                toggleType,
+                selectItem,
+                refreshMarket,
+                sortItems,
+                getPurchaseButtonText,
+                purchaseItem,
+                goToBackpack,
+                getDurabilityPercentage,
+                getDurabilityStatusClass,
+                getDurabilityBarClass
+            };
+        }
+    })
+        .use(ElementPlus)
+        .mount('#app');
+</script>
+</body>
+</html>
